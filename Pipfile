@@ -10,6 +10,7 @@ opencv-python = "*"
 numpy = "<2"
 pupil-labs-uvc = "*"
 matplotlib = "*"
+fastapi = "*"
 
 [dev-packages]
 

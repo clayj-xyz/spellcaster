@@ -1,7 +1,11 @@
 import math
+from multiprocessing.shared_memory import SharedMemory
 
 import cv2
 import numpy as np
+
+from camera import Camera
+
 
 class WandTracker:
     def __init__(self, blob_detector):
@@ -66,32 +70,47 @@ def draw_wand_path(frame, wand_path):
     return frame
 
 
-def main():
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Error: Could not open video capture.")
-        return
-    
+def run_wand_tracker():
+    camera = Camera()
     blob_detector = get_blob_detector()
     wand_tracker = WandTracker(blob_detector)
 
+    for frame in camera.stream():
+        yield frame, wand_tracker.process_frame(frame)
+
+
+def serve_wand_tracker():
+    print("starting wand tracker")
+    wand_tracker = run_wand_tracker()
+    frame, _ = next(wand_tracker)
+
+    #create the shared memory for the frame buffer
+    frame_buffer_shm = SharedMemory(name="wand_frame_buffer", create=True, size=frame.nbytes)
+    frame_buffer = np.ndarray((480, 640, 3), buffer=frame_buffer_shm.buf, dtype=frame.dtype)
+
+    for frame, wand_path in wand_tracker:
+        frame_buffer[:] = draw_wand_path(frame, wand_path)[:]
+
+    frame_buffer_shm.close()
+
+
+def read_wand_tracker():
+    frame_buffer_shm = SharedMemory(name="wand_frame_buffer")
+    #create the framebuffer using the shm's memory
+    frame_buffer = np.ndarray((480, 640, 3), buffer=frame_buffer_shm.buf, dtype='u1')
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
+        yield frame_buffer
 
-        frame = cv2.flip(frame,1)
-        
-        wand_path = wand_tracker.process_frame(frame)
-        wand_path_img = draw_wand_path(frame, wand_path)
-        cv2.imshow('wand path', wand_path_img)
 
-        # Press 'q' to exit the loop
+def main():
+    for frame, wand_path in run_wand_tracker():
+        wand_path_frame = draw_wand_path(frame, wand_path)
+        cv2.imshow('wand path', wand_path_frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    cap.release()
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    main()
+    #main()
+    serve_wand_tracker()
