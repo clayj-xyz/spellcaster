@@ -24,7 +24,7 @@ class WandTracker:
         possible_wand_keypoints = []
         for k in keypoints:
             dist = math.dist(k, self.wand_path[-1])
-            if dist > 1 and dist < 100:
+            if dist > 5 and dist < 100:
                 possible_wand_keypoints.append((k, dist))
         
         if len(possible_wand_keypoints) == 0:
@@ -42,8 +42,8 @@ class WandTracker:
                 if len(self.wand_path) >= self.minimum_wand_path_len:
                     print("spell detected")
                 self.wand_path.clear()
-                self.empty_frame_cnt = 0
         else:
+            self.empty_frame_cnt = 0
             self.wand_path.append(wand_keypoint)
 
         return self.wand_path
