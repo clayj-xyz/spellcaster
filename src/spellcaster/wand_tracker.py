@@ -1,10 +1,10 @@
 import math
-from multiprocessing.shared_memory import SharedMemory
 
 import cv2
 import numpy as np
 
-from camera import Camera
+from spellcaster.camera import Camera
+from spellcaster.shared_buffer import SharedFrameBufferWriter
 
 
 class WandTracker:
@@ -12,7 +12,7 @@ class WandTracker:
         self.blob_detector = blob_detector
         self.wand_path = []
         self.minimum_wand_path_len = 30
-        self.patience = 30
+        self.patience = 15
         self.empty_frame_cnt = 0
 
     def get_wand_keypoint(self, keypoints):
@@ -42,6 +42,7 @@ class WandTracker:
                 if len(self.wand_path) >= self.minimum_wand_path_len:
                     print("spell detected")
                 self.wand_path.clear()
+                self.empty_frame_cnt = 0
         else:
             self.wand_path.append(wand_keypoint)
 
@@ -81,25 +82,12 @@ def run_wand_tracker():
 
 def serve_wand_tracker():
     print("starting wand tracker")
+    shared_frame_buffer = SharedFrameBufferWriter()
     wand_tracker = run_wand_tracker()
-    frame, _ = next(wand_tracker)
-
-    #create the shared memory for the frame buffer
-    frame_buffer_shm = SharedMemory(name="wand_frame_buffer", create=True, size=frame.nbytes)
-    frame_buffer = np.ndarray((480, 640, 3), buffer=frame_buffer_shm.buf, dtype=frame.dtype)
 
     for frame, wand_path in wand_tracker:
-        frame_buffer[:] = draw_wand_path(frame, wand_path)[:]
-
-    frame_buffer_shm.close()
-
-
-def read_wand_tracker():
-    frame_buffer_shm = SharedMemory(name="wand_frame_buffer")
-    #create the framebuffer using the shm's memory
-    frame_buffer = np.ndarray((480, 640, 3), buffer=frame_buffer_shm.buf, dtype='u1')
-    while True:
-        yield frame_buffer
+        wand_path_img = draw_wand_path(frame, wand_path)
+        shared_frame_buffer.write(wand_path_img)
 
 
 def main():

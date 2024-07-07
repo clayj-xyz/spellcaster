@@ -13,7 +13,7 @@ class Camera:
             if not ret:
                 raise RuntimeError("Video capture ended abruptly")
             
-            cv2.flip(frame,1)
+            frame = cv2.flip(frame,1)
             yield frame
     
     def __del__(self):

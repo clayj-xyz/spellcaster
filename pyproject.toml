@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools >= 61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spellcaster"
+version = "0.1.0"
+dependencies = [
+  "opencv-python",
+  "numpy<2",
+  "fastapi"
+]
+requires-python = ">=3.11"
+authors = [
+  {name = "Clay James", email = "clay@clayj.xyz"},
+]
