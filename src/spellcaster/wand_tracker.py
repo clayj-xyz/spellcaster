@@ -1,10 +1,13 @@
 import math
+import signal
+import sys
 
 import cv2
 import numpy as np
 
 from spellcaster.camera import Camera
 from spellcaster.shared_buffer import SharedFrameBufferWriter
+from spellcaster.graceful_shutdown import GracefulShutdown
 
 
 class WandTracker:
@@ -82,12 +85,15 @@ def run_wand_tracker():
 
 def serve_wand_tracker():
     print("starting wand tracker")
+    graceful_shutdown = GracefulShutdown()
     shared_frame_buffer = SharedFrameBufferWriter()
     wand_tracker = run_wand_tracker()
 
     for frame, wand_path in wand_tracker:
         wand_path_img = draw_wand_path(frame, wand_path)
         shared_frame_buffer.write(wand_path_img)
+        if graceful_shutdown.exit:
+            break
 
 
 def main():
@@ -98,6 +104,7 @@ def main():
             break
 
     cv2.destroyAllWindows()
+
 
 if __name__ == "__main__":
     #main()

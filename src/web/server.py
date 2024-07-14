@@ -1,17 +1,28 @@
-import time
-import threading
-
-import cv2
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, HTMLResponse
 
-from spellcaster.shared_buffer import SharedFrameBufferReader
-from spellcaster.constants import FRAME_RATE
+from web.spellcaster_manager import SpellcasterManager
+from web.spellcaster_viewer import SpellcasterViewer
+
+spellcaster_manager = None
+spellcaster_viewer = None
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    global spellcaster_manager, spellcaster_viewer
+
+    spellcaster_manager = SpellcasterManager()
+    spellcaster_viewer = SpellcasterViewer()
+    yield
+    del spellcaster_viewer
+    del spellcaster_manager
+    
+
+app = FastAPI(lifespan=lifespan)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
@@ -19,31 +30,44 @@ templates = Jinja2Templates(directory="templates")
 
 @app.get("/")
 def index(request: Request):
-    return templates.TemplateResponse('index.html', {"request": request})
+    return templates.TemplateResponse('index.html', {"request": request, "spellcaster_mode": spellcaster_manager.mode})
 
-    
-latest_frame = None
-def capture_stream():
-    global latest_frame
-    shared_frame_buffer = SharedFrameBufferReader()
-    for frame in shared_frame_buffer.read():
-        ret, jpeg = cv2.imencode('.jpg', frame)
-        if ret:
-            latest_frame = jpeg.tobytes()
-        time.sleep(1 / FRAME_RATE)  # Adjust to control the frame rate
 
-# Start the capture thread
-capture_thread = threading.Thread(target=capture_stream)
-capture_thread.daemon = True
-capture_thread.start()
+@app.get("/mode")
+def get_mode():
+    return spellcaster_manager.mode
+
+
+@app.get("/activate")
+def activate():
+    spellcaster_manager.change_mode("active")
+    return HTMLResponse(
+        """
+        <button hx-get="/deactivate" hx-target="this" hx-swap="outerHTML" class="btn primary">
+            Deactivate
+        </button>
+        """
+    )
+
+
+@app.get("/deactivate")
+def deactivate():
+    spellcaster_manager.change_mode("standby")
+    return HTMLResponse(
+        """
+        <button hx-get="/activate" hx-target="this" hx-swap="outerHTML" class="btn primary">
+            Activate
+        </button>
+        """
+    )
+
 
 @app.get("/stream")
-def stream():
-    def video_streamer():
-        while True:
-            if latest_frame is not None:
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + latest_frame + b'\r\n')
-            time.sleep(1 / FRAME_RATE)
-
-    return StreamingResponse(video_streamer(), media_type='multipart/x-mixed-replace; boundary=frame')
+async def stream(request: Request):
+    if spellcaster_manager.mode == "standby":
+        return "error"
+    
+    return StreamingResponse(
+        spellcaster_viewer.get_stream(request),
+        media_type='multipart/x-mixed-replace; boundary=frame'
+    )
