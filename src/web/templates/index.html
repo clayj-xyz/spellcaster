@@ -1,10 +1,22 @@
 {% extends "layout.html" %}
 {% block main_content %}
 <div class="container">
-    <button hx-get="/activate" hx-target="this" hx-swap="outerHTML" class="btn primary">
-        Activate
+    <!-- buttons to change mode.-->
+
+    <button hx-get="/mode/inference" hx-target="this" hx-swap="outerHTML" class="btn">
+        Inference
     </button>
-    <img src="/stream" width="640" height="480">
+    <button hx-get="/mode/training" hx-target="this" hx-swap="outerHTML" class="btn">
+        Training
+    </button>
+    <button hx-get="/mode/debug" hx-target="this" hx-swap="outerHTML" class="btn">
+        Debug
+    </button>
+    <button hx-get="/mode/standby" hx-target="this" hx-swap="outerHTML" class="btn primary">
+        Standby
+    </button>
+
+    <!-- <img src="/stream" width="640" height="480"> -->
 </div>
 
 {% endblock %}

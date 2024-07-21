@@ -4,7 +4,7 @@ import threading
 
 import cv2
 
-from spellcaster.shared_buffer import SharedFrameBufferReader
+from spellcaster.utils.shared_buffer import SharedFrameBufferReader
 from spellcaster.constants import FRAME_RATE
 
 

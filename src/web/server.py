@@ -33,30 +33,13 @@ def index(request: Request):
     return templates.TemplateResponse('index.html', {"request": request, "spellcaster_mode": spellcaster_manager.mode})
 
 
-@app.get("/mode")
-def get_mode():
-    return spellcaster_manager.mode
-
-
-@app.get("/activate")
-def activate():
-    spellcaster_manager.change_mode("active")
+@app.get("/mode/{mode}")
+def change_mode(mode: str):
+    spellcaster_manager.change_mode(mode)
     return HTMLResponse(
-        """
-        <button hx-get="/deactivate" hx-target="this" hx-swap="outerHTML" class="btn primary">
-            Deactivate
-        </button>
-        """
-    )
-
-
-@app.get("/deactivate")
-def deactivate():
-    spellcaster_manager.change_mode("standby")
-    return HTMLResponse(
-        """
-        <button hx-get="/activate" hx-target="this" hx-swap="outerHTML" class="btn primary">
-            Activate
+        f"""
+        <button hx-get="/mode/standby" hx-target="this" hx-swap="outerHTML" class="btn primary">
+            {mode.capitalize()}
         </button>
         """
     )

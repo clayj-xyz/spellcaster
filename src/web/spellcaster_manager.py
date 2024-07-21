@@ -1,30 +1,33 @@
 from multiprocessing import Process
 
-from spellcaster.wand_tracker import serve_wand_tracker
+from spellcaster.spellcaster import build_spellcaster, SpellcasterMode, RunMode
 
 
 class SpellcasterManager:
     def __init__(self):
         self.spellcaster_process = None
-        self.mode = "standby"
+        self.mode = SpellcasterMode.STANDBY
 
-    def change_mode(self, new_mode):
-        if new_mode == self.mode:
-            return
-        
-        if new_mode == "standby":
+    def terminate(self):
+        if self.spellcaster_process is not None and self.spellcaster_process.is_alive():
             self.spellcaster_process.terminate()
-        elif new_mode == "active":
-            self.spellcaster_process = Process(target=serve_wand_tracker)
+            self.spellcaster_process.join()
+        self.mode = SpellcasterMode.STANDBY
+            
+    def run_spellcaster(self):
+        spellcaster = build_spellcaster(
+            run_mode=RunMode.SUBPROCESS,
+            spellcaster_mode=self.mode
+        )
+        spellcaster.run()
+
+    def change_mode(self, new_mode: SpellcasterMode):
+        self.terminate()
+        if new_mode != SpellcasterMode.STANDBY:
+            self.mode = new_mode
+            self.spellcaster_process = Process(target=self.run_spellcaster)
             self.spellcaster_process.start()
-        elif new_mode == "training":
-            print("training")
-        else:
-            raise ValueError("invalid mode")
-        
-        self.mode = new_mode
-
+            
     def __del__(self):
-        if self.spellcaster_process is not None:
-            self.spellcaster_process.terminate()
+        self.terminate()
     

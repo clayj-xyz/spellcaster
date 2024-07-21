@@ -4,16 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-jupyter = "*"
-ipykernel = "*"
 opencv-python = "*"
 numpy = "<2"
-pupil-labs-uvc = "*"
 matplotlib = "*"
 fastapi = "*"
 spellcaster = {file = ".", editable = true}
+fire = "*"
 
 [dev-packages]
+jupyter = "*"
+ipykernel = "*"
 
 [requires]
 python_version = "3.11"

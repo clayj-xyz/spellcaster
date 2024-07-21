@@ -1,18 +1,18 @@
 import math
-import signal
-import sys
 
 import cv2
-import numpy as np
 
-from spellcaster.camera import Camera
-from spellcaster.shared_buffer import SharedFrameBufferWriter
-from spellcaster.graceful_shutdown import GracefulShutdown
+from spellcaster.spell_handler import SpellHandler
 
 
 class WandTracker:
-    def __init__(self, blob_detector):
+    def __init__(
+        self,
+        blob_detector: cv2.SimpleBlobDetector,
+        spell_handler: SpellHandler
+    ):
         self.blob_detector = blob_detector
+        self.spell_handler = spell_handler
         self.wand_path = []
         self.minimum_wand_path_len = 30
         self.patience = 15
@@ -43,69 +43,11 @@ class WandTracker:
             self.empty_frame_cnt += 1
             if self.empty_frame_cnt > self.patience:
                 if len(self.wand_path) >= self.minimum_wand_path_len:
-                    print("spell detected")
+                    self.spell_handler.handle_spell(self.wand_path)
                 self.wand_path.clear()
         else:
             self.empty_frame_cnt = 0
             self.wand_path.append(wand_keypoint)
 
         return self.wand_path
-
-
-def get_blob_detector():
-    params = cv2.SimpleBlobDetector_Params()
-
-    params.filterByColor = True
-    params.blobColor = 255
-
-    params.minThreshold = 150
-    params.maxThreshold = 255
-
-    params.filterByArea = True
-    params.maxArea = 1000
     
-    return cv2.SimpleBlobDetector_create(params)
-
-
-def draw_wand_path(frame, wand_path):
-    for i in range(1, len(wand_path)):
-        thickness = int(np.sqrt(len(wand_path) / float(i + 1)) * 2.5)
-        cv2.line(frame, wand_path[i - 1], wand_path[i], (0, 0, 255), thickness)
-    return frame
-
-
-def run_wand_tracker():
-    camera = Camera()
-    blob_detector = get_blob_detector()
-    wand_tracker = WandTracker(blob_detector)
-
-    for frame in camera.stream():
-        yield frame, wand_tracker.process_frame(frame)
-
-
-def serve_wand_tracker():
-    print("starting wand tracker")
-    graceful_shutdown = GracefulShutdown()
-    shared_frame_buffer = SharedFrameBufferWriter()
-    wand_tracker = run_wand_tracker()
-
-    for frame, wand_path in wand_tracker:
-        wand_path_img = draw_wand_path(frame, wand_path)
-        shared_frame_buffer.write(wand_path_img)
-        if graceful_shutdown.exit:
-            break
-
-
-def main():
-    for frame, wand_path in run_wand_tracker():
-        wand_path_frame = draw_wand_path(frame, wand_path)
-        cv2.imshow('wand path', wand_path_frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    #main()
-    serve_wand_tracker()
