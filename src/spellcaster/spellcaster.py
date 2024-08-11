@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import StrEnum
 from typing import Optional
 
 from fire import Fire
@@ -17,14 +17,7 @@ from spellcaster.utils import (
 )
 
 
-class SpellcasterMode(str, Enum):
-    INFERENCE = "inference"
-    TRAINING = "training"
-    DEBUG = "debug"
-    STANDBY = "standby"
-
-
-class RunMode(str, Enum):
+class Env(StrEnum):
     SUBPROCESS = "subprocess"
     STANDALONE = "standalone"
 
@@ -42,53 +35,59 @@ class Spellcaster:
         self.exit_checker = exit_checker
         self.visualizer = visualizer
         
-    def run(self):
+    def run(self, debug: bool = False):
+        spell_handler = InferenceSpellHandler(debug=debug)
+        self.wand_tracker.set_spell_handler(spell_handler)
+
         for frame in self.camera.stream():
             wand_path = self.wand_tracker.process_frame(frame)
-            if self.visualizer is not None:
+            if debug:
                 self.visualizer(frame, wand_path)
             if self.exit_checker.should_exit():
                 break
 
+    def train(self, spell_name: str):
+        spell_handler = TrainingSpellHandler(spell_name)
+        self.wand_tracker.set_spell_handler(spell_handler)
+
+        for frame in self.camera.stream():
+            wand_path = self.wand_tracker.process_frame(frame)
+            self.visualizer(frame, wand_path)
+            if self.exit_checker.should_exit():
+                break
+
             
-def build_spellcaster(run_mode: RunMode, spellcaster_mode: SpellcasterMode):
-    if spellcaster_mode == SpellcasterMode.STANDBY:
-        raise ValueError("cannot build spellcaster in standby mode")
-    
+def build_spellcaster(env: Env):    
     camera = Camera()
-    spell_handler = None
     exit_checker = None
     visualizer = None
 
-    match run_mode:
-        case RunMode.STANDALONE:
+    match env:
+        case Env.STANDALONE:
             exit_checker = CV2ExitChecker()
             visualizer = CV2WandPathVisualizer()
-        case RunMode.SUBPROCESS:
+        case Env.SUBPROCESS:
             exit_checker = SigTermExitChecker()
-            if spellcaster_mode in (SpellcasterMode.DEBUG, SpellcasterMode.TRAINING):
-                visualizer = ShmWandPathVisualizer()
+            visualizer = ShmWandPathVisualizer()
         case _:
-            raise ValueError(f"Unknown run mode: {run_mode}")
-
-    match spellcaster_mode:
-        case SpellcasterMode.INFERENCE:
-            spell_handler = InferenceSpellHandler()
-        case SpellcasterMode.DEBUG:
-            spell_handler = InferenceSpellHandler(debug=True)
-        case SpellcasterMode.TRAINING:
-            spell_handler = TrainingSpellHandler()
-        case _:
-            raise ValueError(f"Unknown spellcaster mode: {spellcaster_mode}")
+            raise ValueError(f"Unknown env: {env}")
         
-    wand_tracker = WandTracker(get_blob_detector(), spell_handler)
+    wand_tracker = WandTracker(get_blob_detector())
     return Spellcaster(camera, wand_tracker, exit_checker, visualizer)
 
 
-def main(spellcaster_mode: SpellcasterMode):
-    spellcaster = build_spellcaster(RunMode.STANDALONE, spellcaster_mode)
-    spellcaster.run()
+def run(debug: bool = False, env: Env = Env.STANDALONE):
+    spellcaster = build_spellcaster(env)
+    spellcaster.run(debug)
+
+
+def train(spell_name: str, env: Env = Env.STANDALONE):
+    spellcaster = build_spellcaster(env)
+    spellcaster.train(spell_name)
 
 
 if __name__ == "__main__":
-    Fire(main)
+    Fire({
+        "run": run,
+        "train": train
+    })

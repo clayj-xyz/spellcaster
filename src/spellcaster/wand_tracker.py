@@ -1,4 +1,5 @@
 import math
+from typing import Optional
 
 import cv2
 
@@ -9,7 +10,7 @@ class WandTracker:
     def __init__(
         self,
         blob_detector: cv2.SimpleBlobDetector,
-        spell_handler: SpellHandler
+        spell_handler: Optional[SpellHandler] = None
     ):
         self.blob_detector = blob_detector
         self.spell_handler = spell_handler
@@ -17,6 +18,9 @@ class WandTracker:
         self.minimum_wand_path_len = 30
         self.patience = 15
         self.empty_frame_cnt = 0
+
+    def set_spell_handler(self, spell_handler: SpellHandler):
+        self.spell_handler = spell_handler
 
     def get_wand_keypoint(self, keypoints):
         if len(keypoints) == 0:
@@ -43,7 +47,11 @@ class WandTracker:
             self.empty_frame_cnt += 1
             if self.empty_frame_cnt > self.patience:
                 if len(self.wand_path) >= self.minimum_wand_path_len:
-                    self.spell_handler.handle_spell(self.wand_path)
+                    if self.spell_handler is not None:
+                        self.spell_handler.handle_spell(self.wand_path)
+                    else:
+                        print("spell detected")
+                        
                 self.wand_path.clear()
         else:
             self.empty_frame_cnt = 0

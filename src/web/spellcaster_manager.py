@@ -1,6 +1,15 @@
+from enum import StrEnum
+
 from multiprocessing import Process
 
-from spellcaster.spellcaster import build_spellcaster, SpellcasterMode, RunMode
+from spellcaster.spellcaster import run, train, Env
+
+
+class SpellcasterMode(StrEnum):
+    INFERENCE = "inference"
+    TRAINING = "training"
+    DEBUG = "debug"
+    STANDBY = "standby"
 
 
 class SpellcasterManager:
@@ -13,20 +22,27 @@ class SpellcasterManager:
             self.spellcaster_process.terminate()
             self.spellcaster_process.join()
         self.mode = SpellcasterMode.STANDBY
-            
-    def run_spellcaster(self):
-        spellcaster = build_spellcaster(
-            run_mode=RunMode.SUBPROCESS,
-            spellcaster_mode=self.mode
-        )
-        spellcaster.run()
 
-    def change_mode(self, new_mode: SpellcasterMode):
+    def run(self):
         self.terminate()
-        if new_mode != SpellcasterMode.STANDBY:
-            self.mode = new_mode
-            self.spellcaster_process = Process(target=self.run_spellcaster)
-            self.spellcaster_process.start()
+        self.mode = SpellcasterMode.INFERENCE
+        kwargs = {"debug": False, "env": Env.SUBPROCESS}
+        self.spellcaster_process = Process(target=run, kwargs=kwargs)
+        self.spellcaster_process.start()
+    
+    def train(self, spell_name: str):
+        self.terminate()
+        self.mode = SpellcasterMode.TRAINING
+        kwargs = {"spell_name": spell_name, "env": Env.SUBPROCESS}
+        self.spellcaster_process = Process(target=train, kwargs=kwargs)
+        self.spellcaster_process.start()
+
+    def debug(self):
+        self.terminate()
+        self.mode = SpellcasterMode.DEBUG
+        kwargs = {"debug": True, "env": Env.SUBPROCESS}
+        self.spellcaster_process = Process(target=run, kwargs=kwargs)
+        self.spellcaster_process.start()
             
     def __del__(self):
         self.terminate()
