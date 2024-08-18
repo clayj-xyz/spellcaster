@@ -6,14 +6,14 @@ name = "pypi"
 [packages]
 opencv-python = "*"
 numpy = "<2"
-matplotlib = "*"
 fastapi = "*"
-spellcaster = {file = ".", editable = true}
+spellcaster = {file = "spellcaster", editable = true}
 fire = "*"
 
 [dev-packages]
 jupyter = "*"
 ipykernel = "*"
+matplotlib = "*"
 
 [requires]
 python_version = "3.11"
