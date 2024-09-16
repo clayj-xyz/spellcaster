@@ -2,4 +2,6 @@
 *.egg-info
 __pycache__
 dev.ipynb
-images
+data
+.env
+*.pth

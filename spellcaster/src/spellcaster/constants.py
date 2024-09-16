@@ -1,3 +1,4 @@
 FRAME_SHAPE=(480, 640, 3)
 FRAME_RATE=30
-IMAGES_DIR="images"
+DATA_DIR="data"
+MODEL_PATH="model.pth"

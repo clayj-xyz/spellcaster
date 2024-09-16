@@ -15,8 +15,9 @@ class WandTracker:
         self.blob_detector = blob_detector
         self.spell_handler = spell_handler
         self.wand_path = []
-        self.minimum_wand_path_len = 30
-        self.patience = 15
+        self.minimum_wand_path_len = 10
+        self.maximum_wand_path_len = 60
+        self.patience = 10
         self.empty_frame_cnt = 0
 
     def set_spell_handler(self, spell_handler: SpellHandler):
@@ -56,6 +57,8 @@ class WandTracker:
         else:
             self.empty_frame_cnt = 0
             self.wand_path.append(wand_keypoint)
+            if len(self.wand_path) > self.maximum_wand_path_len:
+                self.wand_path.pop(0)
 
         return self.wand_path
     
