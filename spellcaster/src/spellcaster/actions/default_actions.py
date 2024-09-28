@@ -21,6 +21,20 @@ def turn_on_light():
         print("Light turned on")
     else:
         raise RuntimeError(f"Failed to turn on light: {response.text}")
+    
+
+@register("turn on office fan")
+def turn_on_fan():
+    api_key = dotenv_values(".env")["HOMEASSISTANT_API_KEY"]
+    url = "http://homeassistant.local:8123/api/services/fan/turn_on"
+    headers = {"Authorization": f"Bearer {api_key}"}
+    data = {"entity_id": "fan.office_fan"}
+
+    response = post(url, headers=headers, json=data)
+    if response.status_code == 200:
+        print("Fan turned on")
+    else:
+        raise RuntimeError(f"Failed to turn on fan: {response.text}")
 
 
 if __name__ == "__main__":

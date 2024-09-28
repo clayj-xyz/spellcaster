@@ -9,7 +9,8 @@ import torch
 from .actions_registry import actions
 from .constants import FRAME_SHAPE, DATA_DIR, MODEL_PATH
 from .db import get_spell, get_action
-from .train import BasicConvNet, CropWandPath
+from .modeling.train import BasicConvNet
+from .modeling.data_loader import CropWandPath
 
 
 class SpellHandler(ABC):
@@ -43,7 +44,7 @@ class InferenceSpellHandler(SpellHandler):
         wand_path_img = self.draw_wand_path(wand_path)
         cropped_wand_path_img = CropWandPath()(wand_path_img)
         wand_path_img_tensor = torch.tensor(cropped_wand_path_img)[None, None, ...].float()
-        resized_wand_path = torch.nn.functional.interpolate(wand_path_img_tensor, size=(64, 64))
+        resized_wand_path = torch.nn.functional.interpolate(wand_path_img_tensor, size=(28, 28))
 
         with torch.no_grad():
             y_pred = self.model(resized_wand_path)

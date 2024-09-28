@@ -5,7 +5,6 @@ actions = {}
 
 def register(action_name):
     def decorator(func):
-        print("registering ", action_name)
         actions[action_name] = func
         return func
     return decorator

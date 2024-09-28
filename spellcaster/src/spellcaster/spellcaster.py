@@ -7,7 +7,7 @@ from fire import Fire
 from .db import get_spell, add_spell, manage_db, Spell
 from .wand_tracker import WandTracker
 from .spell_handler import InferenceSpellHandler, TrainingSpellHandler
-from .train import train
+from .modeling.train import train
 from .utils import (
     Camera,
     WandPathVisualizer,
