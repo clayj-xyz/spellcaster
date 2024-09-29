@@ -9,7 +9,7 @@ import torch
 from .actions_registry import actions
 from .constants import FRAME_SHAPE, DATA_DIR, MODEL_PATH
 from .db import get_spell, get_action
-from .modeling.train import BasicConvNet
+from .modeling.net import BasicConvNet
 from .modeling.data_loader import CropWandPath
 
 

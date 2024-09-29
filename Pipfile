@@ -18,6 +18,7 @@ requests = "*"
 python-dotenv = "*"
 torch = {version = "*", index = "downloadpytorch"}
 torchvision = {version = "*", index = "downloadpytorch"}
+easyfsl = "*"
 
 [dev-packages]
 jupyter = "*"

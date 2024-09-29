@@ -7,7 +7,7 @@ from fire import Fire
 from .db import get_spell, add_spell, manage_db, Spell
 from .wand_tracker import WandTracker
 from .spell_handler import InferenceSpellHandler, TrainingSpellHandler
-from .modeling.train import train
+from .modeling.train import train, evaluate_on_spell_classification
 from .utils import (
     Camera,
     WandPathVisualizer,
@@ -113,7 +113,8 @@ def cli():
         "run": run,
         "collect_training_data": collect_training_data,
         "manage": manage_db,
-        "train_model": train
+        "train_model": train,
+        "evaluate_model": evaluate_on_spell_classification
     })
 
 
