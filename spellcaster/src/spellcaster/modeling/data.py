@@ -14,7 +14,7 @@ def omniglot_dataloaders(
     nway=5,
     nshot=5,
     nquery=10,
-    ntraining_tasks=4000,
+    ntraining_tasks=40_000,
     nevaluation_tasks=100,
     num_workers=12,
 ):

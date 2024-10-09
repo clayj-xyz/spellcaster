@@ -2,8 +2,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 
-from spellcaster_manager import SpellcasterManager
-from spellcaster_viewer import SpellcasterViewer
+from .spellcaster_manager import SpellcasterManager
+from .spellcaster_viewer import SpellcasterViewer
 
 spellcaster_manager = None
 spellcaster_viewer = None

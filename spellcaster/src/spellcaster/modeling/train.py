@@ -37,7 +37,7 @@ def evaluate(model: torch.nn.Module, data_loader: DataLoader):
 
     # eval mode affects the behaviour of some layers (such as batch normalization or dropout)
     # no_grad() tells torch not to keep in memory the whole computational graph (it's more lightweight this way)
-    model.eval()
+    model.cuda().eval()
     with torch.no_grad():
         for episode_index, (
             support_images,
@@ -48,7 +48,11 @@ def evaluate(model: torch.nn.Module, data_loader: DataLoader):
         ) in tqdm(enumerate(data_loader), total=len(data_loader)):
 
             correct, total = evaluate_on_one_task(
-                model, support_images, support_labels, query_images, query_labels
+                model,
+                support_images.cuda(),
+                support_labels.cuda(),
+                query_images.cuda(),
+                query_labels.cuda()
             )
 
             total_predictions += total
@@ -61,7 +65,7 @@ def evaluate(model: torch.nn.Module, data_loader: DataLoader):
 
 def train():
     train_loader, test_loader = omniglot_dataloaders()
-    model = FewShotClassifier()
+    model = FewShotClassifier().cuda()
 
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     criterion = nn.CrossEntropyLoss()
@@ -80,10 +84,12 @@ def train():
         ) in tqdm_train:
             optimizer.zero_grad()
             classification_scores = model(
-                support_images, support_labels, query_images
+                support_images.cuda(),
+                support_labels.cuda(),
+                query_images.cuda()
             )
 
-            loss = criterion(classification_scores, query_labels)
+            loss = criterion(classification_scores, query_labels.cuda())
             all_loss.append(loss.item())
 
             loss.backward()
